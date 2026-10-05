@@ -1,0 +1,36 @@
+
+━━ 0. 部署：钱包实现合约 + 测试用 USDC ━━
+  实现合约 0x5fbdb2315678afecb367f032d93f642f64180aa3
+  USDC     0xe7f1725e7734ce288f8367e1bb143e90bb3f0512
+  Alice    0x70997970C51812dc3A010C7d01b50e0d17dc79C8，USDC 余额 1000 USDC
+  Agent    0xB8B4a0B044a21aa1b2E4Ac20A9E68A3eDf72fbea，ETH 余额 0
+
+━━ 1. Alice 发一笔 type-4 交易：同一笔里完成 7702 委托 + 给 agent 开 session ━━
+  委托前 Alice 的 code：0x（普通 EOA）
+  交易类型 eip7702，authorizationList 长度 1，gas 112632
+  委托后 Alice 的 code：0xef01005fbdb2315678afecb367f032d93f642f64180aa3
+  （0xef0100 + 实现合约地址 —— 这就是 7702 的 delegation designator）
+  agent 今日剩余额度：100 USDC
+
+━━ 2. agent 付款：签 EIP-712，relayer 代发 ━━
+  ✅ 付 30 USDC 给商家 — 成功，gas 124108（relayer 付）
+  ✅ 付 50 USDC 给商家 — 成功，gas 72808（relayer 付）
+  剩余额度：20 USDC
+  ⛔ 再付 40 USDC（超额） — 被拦下：LimitExceeded(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512, 40000000, 20000000)
+
+━━ 3. agent 被诱导（比如 prompt injection）想做越权的事 ━━
+  ⛔ approve 给攻击者无限额度 — 被拦下：CallNotAllowed(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512, 0x095ea7b3)
+  ⛔ 调用钱包自己的 grantSession 给自己提额 — 被拦下：SelfCallForbidden()
+  ⛔ 把 Alice 的 ETH 转走 — 被拦下：CallNotAllowed(0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC, 0x00000000)
+
+━━ 4. 第二天额度重置 ━━
+  剩余额度：100 USDC
+  ✅ 付 40 USDC — 成功，gas 76066（relayer 付）
+
+━━ 5. Alice 一键撤销 ━━
+  ⛔ 撤销后再付 1 USDC — 被拦下：SessionInactive()
+
+━━ 结果 ━━
+  商家收到 120 USDC（预期 120 = 30 + 50 + 40）
+  Alice 剩余 880 USDC
+  agent 的 ETH 余额始终是 0
