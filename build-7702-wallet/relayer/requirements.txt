@@ -1,0 +1,5 @@
+eth-account==0.14.0
+web3==8.0.0
+click==8.5.0
+rich==15.0.0
+python-dotenv==1.2.4
